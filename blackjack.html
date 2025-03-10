@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #2E7D32;
+            color: white;
+        }
+
+        h1 {
+            font-size: 36px;
+            text-shadow: 3px 3px black;
+        }
+
+        #balance-container, #bet-container {
+            font-size: 24px;
+            margin: 20px 0;
+            font-weight: bold;
+            background-color: #FFD700;
+            color: black;
+            padding: 10px;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: 2px 2px 10px black;
+        }
+
+        #game-container {
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #1976D2;
+        }
+
+        #reset-button {
+            background-color: red;
+        }
+
+        #reset-button:hover {
+            background-color: darkred;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🃏 Blackjack 🎲</h1>
+
+    <div id="balance-container">
+        Balance : <span id="balance">0</span> €
+    </div>
+
+    <div id="bet-container">
+        Mise actuelle : <span id="bet">0</span> €
+    </div>
+
+    <div>
+        <input type="number" id="bet-input" placeholder="Entrez votre mise" min="10">
+        <button onclick="startGame()">Miser</button>
+    </div>
+
+    <div id="game-container">
+        <p id="player-hand">Votre main : 0</p>
+        <p id="dealer-hand">Main du croupier : 0</p>
+        <button id="hit-button" onclick="hit()" disabled>Piocher</button>
+        <button id="stand-button" onclick="stand()" disabled>Rester</button>
+    </div>
+
+    <p id="message"></p>
+    <button id="reset-button" onclick="resetGame()" disabled>Nouvelle Partie</button>
+
+    <script>
+        let balance = localStorage.getItem("casinoBalance");
+        if (balance === null) {
+            balance = 1000;
+            localStorage.setItem("casinoBalance", balance);
+        } else {
+            balance = parseInt(balance);
+        }
+
+        document.getElementById("balance").textContent = balance;
+
+        let playerHand = 0;
+        let dealerHand = 0;
+        let bet = 0;
+        let gameOver = false;
+
+        function updateBalance() {
+            document.getElementById("balance").textContent = balance;
+            localStorage.setItem("casinoBalance", balance);
+        }
+
+        function startGame() {
+            if (gameOver) return;
+
+            let betAmount = parseInt(document.getElementById("bet-input").value);
+            if (isNaN(betAmount) || betAmount < 10 || betAmount > balance) {
+                alert("Mise invalide. Min: 10€, Max: " + balance + "€");
+                return;
+            }
+
+            balance -= betAmount;
+            bet = betAmount;
+            updateBalance();
+            document.getElementById("bet").textContent = bet;
+
+            playerHand = getRandomCard() + getRandomCard();
+            dealerHand = getRandomCard() + getRandomCard();
+
+            document.getElementById("player-hand").textContent = "Votre main : " + playerHand;
+            document.getElementById("dealer-hand").textContent = "Main du croupier : " + dealerHand;
+
+            document.getElementById("hit-button").disabled = false;
+            document.getElementById("stand-button").disabled = false;
+            document.getElementById("reset-button").disabled = true;
+            document.getElementById("message").textContent = "";
+        }
+
+        function getRandomCard() {
+            let cards = [1,2,3,4,5,6,7,8,9,10,10,10,10];
+            return cards[Math.floor(Math.random() * cards.length)];
+        }
+
+        function hit() {
+            if (gameOver) return;
+
+            let newCard = getRandomCard();
+            playerHand += newCard;
+            document.getElementById("player-hand").textContent = "Votre main : " + playerHand;
+
+            if (playerHand > 21) {
+                document.getElementById("message").textContent = "Vous avez dépassé 21 ! Perdu.";
+                gameOver = true;
+                document.getElementById("reset-button").disabled = false;
+                disableButtons();
+            }
+        }
+
+        function stand() {
+            if (gameOver) return;
+
+            while (dealerHand < 17) {
+                dealerHand += getRandomCard();
+            }
+            document.getElementById("dealer-hand").textContent = "Main du croupier : " + dealerHand;
+
+            if (dealerHand > 21 || playerHand > dealerHand) {
+                document.getElementById("message").textContent = "Félicitations, vous gagnez !";
+                balance += bet * 2;
+            } else if (playerHand === dealerHand) {
+                document.getElementById("message").textContent = "Égalité ! Mise remboursée.";
+                balance += bet;
+            } else {
+                document.getElementById("message").textContent = "Le croupier gagne. Vous perdez.";
+            }
+
+            updateBalance();
+            gameOver = true;
+            document.getElementById("reset-button").disabled = false;
+            disableButtons();
+        }
+
+        function disableButtons() {
+            document.getElementById("hit-button").disabled = true;
+            document.getElementById("stand-button").disabled = true;
+        }
+
+        function resetGame() {
+            playerHand = 0;
+            dealerHand = 0;
+            bet = 0;
+            gameOver = false;
+
+            document.getElementById("player-hand").textContent = "Votre main : 0";
+            document.getElementById("dealer-hand").textContent = "Main du croupier : 0";
+            document.getElementById("bet").textContent = "0";
+            document.getElementById("message").textContent = "";
+            document.getElementById("bet-input").value = "";
+
+            document.getElementById("hit-button").disabled = true;
+            document.getElementById("stand-button").disabled = true;
+            document.getElementById("reset-button").disabled = true;
+        }
+    </script>
+
+</body>
+</html>
