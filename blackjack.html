@@ -12,192 +12,214 @@
             color: white;
         }
 
-        h1 {
-            font-size: 36px;
-            text-shadow: 3px 3px black;
+        #game {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            background-color: #1B5E20;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px black;
         }
 
-        #balance-container, #bet-container {
-            font-size: 24px;
-            margin: 20px 0;
+        h1 {
+            text-shadow: 2px 2px black;
+        }
+
+        .card-area {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background-color: white;
+            color: black;
+            width: 50px;
+            height: 70px;
+            line-height: 70px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px black;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #FFD700;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #FFC107;
+        }
+
+        #resultat {
+            font-size: 18px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        #reset, #resetBalance {
+            display: none;
+            background-color: #D32F2F;
+            color: white;
+        }
+
+        #reset:hover, #resetBalance:hover {
+            background-color: #B71C1C;
+        }
+
+        #balance {
+            font-size: 20px;
             font-weight: bold;
             background-color: #FFD700;
             color: black;
             padding: 10px;
             border-radius: 10px;
-            display: inline-block;
             box-shadow: 2px 2px 10px black;
-        }
-
-        #game-container {
-            margin-top: 20px;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 18px;
-            font-weight: bold;
-            margin: 10px;
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            background-color: #1976D2;
-        }
-
-        #reset-button {
-            background-color: red;
-        }
-
-        #reset-button:hover {
-            background-color: darkred;
+            display: inline-block;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 
-    <h1>🃏 Blackjack 🎲</h1>
+    <h1>Blackjack</h1>
+    
+    <div id="balance">Balance : <span id="balance-amount">1000</span> €</div>
+    <button id="resetBalance" onclick="resetBalance()">Réinitialiser la balance</button>
 
-    <div id="balance-container">
-        Balance : <span id="balance">0</span> €
+    <div id="game">
+        <p><b>Votre mise :</b> <span id="mise">0</span> €</p>
+
+        <p><b>Votre main :</b></p>
+        <div class="card-area" id="main-joueur"></div>
+        <p>Total : <span id="score-joueur">0</span></p>
+
+        <p><b>Main du croupier :</b></p>
+        <div class="card-area" id="main-croupier"></div>
+        <p>Total : <span id="score-croupier">?</span></p>
+
+        <button onclick="piocher()">Piocher</button>
+        <button onclick="rester()">Rester</button>
+        <button id="reset" onclick="resetGame()">Rejouer</button>
+
+        <p id="resultat"></p>
     </div>
-
-    <div id="bet-container">
-        Mise actuelle : <span id="bet">0</span> €
-    </div>
-
-    <div>
-        <input type="number" id="bet-input" placeholder="Entrez votre mise" min="10">
-        <button onclick="startGame()">Miser</button>
-    </div>
-
-    <div id="game-container">
-        <p id="player-hand">Votre main : 0</p>
-        <p id="dealer-hand">Main du croupier : 0</p>
-        <button id="hit-button" onclick="hit()" disabled>Piocher</button>
-        <button id="stand-button" onclick="stand()" disabled>Rester</button>
-    </div>
-
-    <p id="message"></p>
-    <button id="reset-button" onclick="resetGame()" disabled>Nouvelle Partie</button>
 
     <script>
-        let balance = localStorage.getItem("casinoBalance");
+        let balance = localStorage.getItem("blackjackBalance");
         if (balance === null) {
             balance = 1000;
-            localStorage.setItem("casinoBalance", balance);
+            localStorage.setItem("blackjackBalance", balance);
         } else {
             balance = parseInt(balance);
         }
 
-        document.getElementById("balance").textContent = balance;
+        document.getElementById("balance-amount").textContent = balance;
 
-        let playerHand = 0;
-        let dealerHand = 0;
-        let bet = 0;
-        let gameOver = false;
+        let mise, joueur, croupier, finPartie = false;
 
         function updateBalance() {
-            document.getElementById("balance").textContent = balance;
-            localStorage.setItem("casinoBalance", balance);
+            document.getElementById("balance-amount").textContent = balance;
+            localStorage.setItem("blackjackBalance", balance);
         }
 
-        function startGame() {
-            if (gameOver) return;
-
-            let betAmount = parseInt(document.getElementById("bet-input").value);
-            if (isNaN(betAmount) || betAmount < 10 || betAmount > balance) {
-                alert("Mise invalide. Min: 10€, Max: " + balance + "€");
-                return;
-            }
-
-            balance -= betAmount;
-            bet = betAmount;
+        function resetBalance() {
+            balance = 1000;
             updateBalance();
-            document.getElementById("bet").textContent = bet;
-
-            playerHand = getRandomCard() + getRandomCard();
-            dealerHand = getRandomCard() + getRandomCard();
-
-            document.getElementById("player-hand").textContent = "Votre main : " + playerHand;
-            document.getElementById("dealer-hand").textContent = "Main du croupier : " + dealerHand;
-
-            document.getElementById("hit-button").disabled = false;
-            document.getElementById("stand-button").disabled = false;
-            document.getElementById("reset-button").disabled = true;
-            document.getElementById("message").textContent = "";
+            document.getElementById("resetBalance").style.display = "none";
         }
 
-        function getRandomCard() {
-            let cards = [1,2,3,4,5,6,7,8,9,10,10,10,10];
-            return cards[Math.floor(Math.random() * cards.length)];
+        function tirerCarte() {
+            let carte = Math.floor(Math.random() * 13) + 1;
+            return carte > 10 ? 10 : carte;
         }
 
-        function hit() {
-            if (gameOver) return;
+        function ajusterAs(main) {
+            let total = main.reduce((a, b) => a + b, 0);
+            if (main.includes(1) && total + 10 <= 21) return total + 10;
+            return total;
+        }
 
-            let newCard = getRandomCard();
-            playerHand += newCard;
-            document.getElementById("player-hand").textContent = "Votre main : " + playerHand;
+        function afficherMain() {
+            document.getElementById("main-joueur").innerHTML = joueur.map(c => `<div class="card">${c}</div>`).join("");
+            document.getElementById("score-joueur").textContent = ajusterAs(joueur);
+            document.getElementById("main-croupier").innerHTML = `<div class="card">${croupier[0]}</div><div class="card">?</div>`;
+            document.getElementById("score-croupier").textContent = "?";
+        }
 
-            if (playerHand > 21) {
-                document.getElementById("message").textContent = "Vous avez dépassé 21 ! Perdu.";
-                gameOver = true;
-                document.getElementById("reset-button").disabled = false;
-                disableButtons();
+        function debutPartie() {
+            mise = parseInt(prompt(`Votre balance : ${balance}€. Combien voulez-vous miser ?`), 10);
+            if (isNaN(mise) || mise <= 0 || mise > balance) {
+                alert("Mise invalide. Min: 1€, Max: " + balance + "€");
+                return debutPartie();
+            }
+
+            balance -= mise;
+            updateBalance();
+            document.getElementById("mise").textContent = mise;
+
+            joueur = [tirerCarte(), tirerCarte()];
+            croupier = [tirerCarte(), tirerCarte()];
+            finPartie = false;
+            document.getElementById("resultat").textContent = "";
+            document.getElementById("reset").style.display = "none";
+            afficherMain();
+        }
+
+        function piocher() {
+            if (finPartie) return;
+            joueur.push(tirerCarte());
+            afficherMain();
+            if (ajusterAs(joueur) > 21) {
+                finPartie = true;
+                document.getElementById("resultat").textContent = "Vous avez dépassé 21 ! Vous perdez.";
+                document.getElementById("reset").style.display = "inline-block";
             }
         }
 
-        function stand() {
-            if (gameOver) return;
+        function rester() {
+            if (finPartie) return;
+            document.getElementById("main-croupier").innerHTML = croupier.map(c => `<div class="card">${c}</div>`).join("");
+            document.getElementById("score-croupier").textContent = ajusterAs(croupier);
 
-            while (dealerHand < 17) {
-                dealerHand += getRandomCard();
+            while (ajusterAs(croupier) < 17) {
+                croupier.push(tirerCarte());
+                document.getElementById("main-croupier").innerHTML = croupier.map(c => `<div class="card">${c}</div>`).join("");
+                document.getElementById("score-croupier").textContent = ajusterAs(croupier);
             }
-            document.getElementById("dealer-hand").textContent = "Main du croupier : " + dealerHand;
 
-            if (dealerHand > 21 || playerHand > dealerHand) {
-                document.getElementById("message").textContent = "Félicitations, vous gagnez !";
-                balance += bet * 2;
-            } else if (playerHand === dealerHand) {
-                document.getElementById("message").textContent = "Égalité ! Mise remboursée.";
-                balance += bet;
+            let scoreJoueur = ajusterAs(joueur);
+            let scoreCroupier = ajusterAs(croupier);
+
+            if (scoreCroupier > 21 || scoreJoueur > scoreCroupier) {
+                document.getElementById("resultat").textContent = `Félicitations ! Vous gagnez ${mise * 2}€ !`;
+                balance += mise * 2;
+            } else if (scoreJoueur === scoreCroupier) {
+                document.getElementById("resultat").textContent = "Égalité ! Mise remboursée.";
+                balance += mise;
             } else {
-                document.getElementById("message").textContent = "Le croupier gagne. Vous perdez.";
+                document.getElementById("resultat").textContent = "Le croupier gagne. Vous perdez.";
             }
 
             updateBalance();
-            gameOver = true;
-            document.getElementById("reset-button").disabled = false;
-            disableButtons();
-        }
-
-        function disableButtons() {
-            document.getElementById("hit-button").disabled = true;
-            document.getElementById("stand-button").disabled = true;
+            finPartie = true;
+            document.getElementById("reset").style.display = "inline-block";
+            document.getElementById("resetBalance").style.display = "inline-block";
         }
 
         function resetGame() {
-            playerHand = 0;
-            dealerHand = 0;
-            bet = 0;
-            gameOver = false;
-
-            document.getElementById("player-hand").textContent = "Votre main : 0";
-            document.getElementById("dealer-hand").textContent = "Main du croupier : 0";
-            document.getElementById("bet").textContent = "0";
-            document.getElementById("message").textContent = "";
-            document.getElementById("bet-input").value = "";
-
-            document.getElementById("hit-button").disabled = true;
-            document.getElementById("stand-button").disabled = true;
-            document.getElementById("reset-button").disabled = true;
+            debutPartie();
         }
+
+        debutPartie();
     </script>
 
 </body>
